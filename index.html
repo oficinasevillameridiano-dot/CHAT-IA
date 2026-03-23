@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Chat IA</title>
+
+  <style>
+    body { font-family: Arial; background: #f5f5f5; }
+    .container { max-width: 600px; margin: 40px auto; background: white; padding: 20px; border-radius: 10px; }
+    #chat { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+    .msg { margin: 5px; padding: 8px; border-radius: 10px; }
+    .user { background: #d0ebff; }
+    .bot { background: #e6f7e6; }
+  </style>
+
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Chat IA</h2>
+
+  <div id="chat"></div>
+
+  <input type="text" id="input" placeholder="Escribe..." style="width:80%">
+  <button onclick="enviarPregunta()">Enviar</button>
+</div>
+
+<script>
+
+
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlwMz2bXBY_AJOseJ5bRbCr5gsPiMO7zETRFvkTEY1mkfl2y1h6IQeyj3E3FUFPKT5/exec";
+
+function getQueryParam(param) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(param) || "";
+}
+
+const USER_EMAIL = getQueryParam("EMAIL");
+
+
+function agregarMensaje(texto, tipo) {
+  const div = document.createElement("div");
+  div.className = "msg " + tipo;
+  div.innerText = texto;
+  document.getElementById("chat").appendChild(div);
+}
+
+
+async function enviarPregunta() {
+
+  const input = document.getElementById("input");
+  const pregunta = input.value.trim();
+
+  if (!pregunta) return;
+
+  agregarMensaje("Tú: " + pregunta, "user");
+  input.value = "";
+
+  try {
+
+    const formData = new FormData();
+    formData.append("data", JSON.stringify({
+      ID: Date.now().toString(),
+      COMANDOS: pregunta,
+      EMAIL: USER_EMAIL
+    }));
+
+    const response = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      body: formData
+    });
+
+    const text = await response.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      agregarMensaje("Error real: " + text, "bot");
+      return;
+    }
+
+    agregarMensaje("IA: " + data.RESPUESTA_BOT, "bot");
+
+  } catch (error) {
+    agregarMensaje("Error conexión", "bot");
+    console.log(error);
+  }
+}
+
+
+document.getElementById("input").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") enviarPregunta();
+});
+
+</script>
+
+</body>
+</html>
